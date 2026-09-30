@@ -1,0 +1,42 @@
+{
+  "name": "douban-bangumi-sync",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "豆瓣 ↔ Bangumi 观影同步 Chrome 扩展（MV3）：双向同步想看/在看/看过、评分、短评与标签",
+  "keywords": [
+    "douban",
+    "bangumi",
+    "bgm",
+    "chrome-extension",
+    "mv3",
+    "sync",
+    "anime"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/XxkumaXia/douban-bangumi-sync#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XxkumaXia/douban-bangumi-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/XxkumaXia/douban-bangumi-sync/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node tests/core.test.mjs && node tests/reverse.test.mjs && node tests/forward-match.test.mjs && node tests/parse.test.mjs && node tests/search.test.mjs && node tests/nav.test.mjs && node tests/douban-write.test.mjs && node tests/douban-form-probe.test.mjs && node tests/status-mapping.test.mjs && node tests/options-rating.test.mjs && node tests/ui-dialog.test.mjs && node tests/sync-panel.test.mjs && node tests/dom-ids.test.mjs",
+    "test:core": "node tests/core.test.mjs",
+    "test:match": "node tests/forward-match.test.mjs && node tests/reverse.test.mjs",
+    "test:dom": "node tests/dom-ids.test.mjs",
+    "test:parse": "node tests/parse.test.mjs",
+    "test:search": "node tests/search.test.mjs",
+    "test:nav": "node tests/nav.test.mjs",
+    "test:write": "node tests/douban-write.test.mjs && node tests/douban-form-probe.test.mjs",
+    "test:status": "node tests/status-mapping.test.mjs",
+    "test:ui": "node tests/options-rating.test.mjs && node tests/ui-dialog.test.mjs && node tests/sync-panel.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

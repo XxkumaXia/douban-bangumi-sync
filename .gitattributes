@@ -1,0 +1,2 @@
+# 统一跨平台换行，避免 Windows 用户 clone 后 CRLF 混乱
+* text=auto eol=lf

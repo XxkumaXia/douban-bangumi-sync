@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      body {
+        width: 340px;
+        padding: 12px;
+        background: var(--bg);
+      }
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="row between">
+        <h2>豆瓣 ↔ Bangumi 同步</h2>
+        <span id="dot" class="status-dot" style="background: var(--muted)"></span>
+      </div>
+      <div class="muted tiny-text" id="statusLine">正在读取状态…</div>
+      <div class="divider"></div>
+      <div class="stat"><span>豆瓣条目</span><b id="nDouban">—</b></div>
+      <div class="stat"><span>Bangumi 条目</span><b id="nBgm">—</b></div>
+      <div class="stat"><span>已建立映射</span><b id="nMap">—</b></div>
+      <div class="stat"><span>上次扫描</span><b id="lastScan">—</b></div>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="btnQuick">一键同步</button>
+      <button id="btnOpen">同步面板</button>
+      <button id="btnOptions">设置</button>
+    </div>
+    <div class="row" style="margin-top: 8px">
+      <button id="btnCheck" style="flex: 1">检查连接</button>
+    </div>
+
+    <div id="msg" class="tiny-text muted" style="margin-top: 10px"></div>
+    <div id="quick" style="margin-top: 8px"></div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

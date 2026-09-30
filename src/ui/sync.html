@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>同步面板 · 豆瓣 ↔ Bangumi</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      body {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 18px 16px 80px;
+      }
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+      }
+      .tabs button {
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        padding: 7px 14px;
+        color: var(--muted);
+      }
+      .tabs button.active {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+        font-weight: 600;
+      }
+      .pair {
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        background: #fff;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+      }
+      .pair .title {
+        font-weight: 600;
+      }
+      .pair .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 6px;
+      }
+      @media (max-width: 700px) {
+        .pair .cols {
+          grid-template-columns: 1fr;
+        }
+      }
+      .side {
+        border-left: 3px solid var(--border);
+        padding-left: 8px;
+      }
+      .side.douban {
+        border-left-color: var(--douban);
+      }
+      .side.bangumi {
+        border-left-color: var(--bangumi);
+      }
+      .dirbtn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .share-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: #8a4b00;
+        background: #fff7e6;
+        border: 1px solid #f0c98a;
+        border-radius: 6px;
+        padding: 2px 7px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .share-box input {
+        margin: 0;
+      }
+      .cand {
+        padding: 4px 0;
+        border-bottom: 1px dashed var(--border-soft);
+      }
+      .bar {
+        height: 6px;
+        background: var(--border-soft);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        width: 0;
+        transition: width 0.2s;
+      }
+      .sticky-actions {
+        position: sticky;
+        bottom: 0;
+        background: rgba(246, 247, 249, 0.95);
+        backdrop-filter: blur(4px);
+        border-top: 1px solid var(--border);
+        padding: 10px 0;
+        margin-top: 14px;
+      }
+      /* ---- 演练结果面板 ---- */
+      .dry-item {
+        border-top: 1px dashed var(--border-soft);
+        margin-top: 8px;
+        padding-top: 8px;
+      }
+      .dry-item .row {
+        align-items: center;
+        gap: 6px;
+      }
+      .dry-attempt {
+        margin: 6px 0 6px 10px;
+        padding-left: 8px;
+        border-left: 2px solid var(--border);
+      }
+      .dry-body {
+        margin: 4px 0;
+        padding: 6px 8px;
+        background: #f6f7f9;
+        border: 1px solid var(--border-soft);
+        border-radius: 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 260px;
+        overflow: auto;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        word-break: break-all;
+      }
+      .dry-check {
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--border-soft);
+        background: #fff;
+      }
+      .dry-check.ok {
+        color: #0a7d32;
+        border-color: #b7e4c7;
+        background: #f2fdf6;
+      }
+      .dry-check.bad {
+        color: #b42318;
+        border-color: #f2c1bd;
+        background: #fff5f4;
+      }
+      .dry-check.warn {
+        color: #8a4b00;
+        border-color: #f0c98a;
+        background: #fff7e6;
+      }
+      .tag.douban {
+        background: rgba(44, 187, 99, 0.14);
+        color: #1e7a3c;
+      }
+      .tag.bangumi {
+        background: rgba(240, 145, 165, 0.18);
+        color: #b33a5c;
+      }
+      /* 分类筛选：当前选中的那一个要有明显标识，否则看不出正在按哪个分类看 */
+      button.tiny.active {
+        background: rgba(59, 110, 165, 0.12);
+        border-color: #3b6ea5;
+        color: #1a4a80;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="row between" style="margin-bottom: 12px">
+      <div>
+        <h1>豆瓣 ↔ Bangumi 同步</h1>
+        <div class="muted tiny-text" id="statusLine">就绪</div>
+      </div>
+      <div class="row">
+        <button id="btnOpenOptions">设置</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="row between">
+        <div class="row">
+          <button class="primary" id="btnScan">扫描两侧</button>
+          <button id="btnMatch">自动匹配</button>
+          <button id="btnReload">重新计算差异</button>
+        </div>
+        <div class="muted tiny-text" id="statLine"></div>
+      </div>
+      <div style="margin-top: 10px" class="bar"><i id="bar"></i></div>
+      <div class="muted tiny-text" id="progressLine" style="margin-top: 6px"></div>
+      <div class="hint" style="margin-top: 6px">
+        「自动匹配」<b>只处理还没建立对应的条目</b> —— 已经对上的会直接跳过，所以再点一次
+        通常不会有什么变化，看起来像是「只对那一条起作用」。要全部重来，先到「数据管理」清掉映射表；
+        只想补几条，用下面各页签里的「搜 Bangumi / 搜豆瓣」逐条或批量反查。
+      </div>
+    </div>
+
+    <div class="card" style="padding: 8px 10px">
+      <div class="row">
+        <input
+          type="search"
+          id="q"
+          placeholder="搜索条目：豆瓣标题 / 原名 / Bangumi 标题 / 条目 ID"
+          style="flex: 1"
+          autocomplete="off"
+        />
+        <button class="tiny" id="btnClearQ">清除</button>
+        <span id="qLine" class="tiny-text muted"></span>
+      </div>
+      <div class="row" style="margin-top: 6px">
+        <span class="tiny-text muted">只看分类：</span>
+        <button class="tiny active" data-filter="all">全部 <span class="muted" data-count="all"></span></button>
+        <button class="tiny" data-filter="wish">想看 <span class="muted" data-count="wish"></span></button>
+        <button class="tiny" data-filter="doing">在看 <span class="muted" data-count="doing"></span></button>
+        <button class="tiny" data-filter="done">看过 <span class="muted" data-count="done"></span></button>
+        <span id="filterLine" class="tiny-text muted"></span>
+      </div>
+      <div class="hint" style="margin: 6px 0 0">
+        两个筛选都只决定「当前页签显示哪些条目」，不改变任何勾选；可以和搜索词叠加使用。
+        分类按<b>任一侧</b>的收藏状态判定 —— 比如豆瓣「看过」、Bangumi「在看」的条目，选「在看」和选「看过」都会出现
+        （所以三个分类的数字之和可能大于「全部」，条目数没有算错）。
+        底部「全选 / 只选某方向 / 全部分享」都只作用于筛出来的这些条目。
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="diff">差异 <span id="cDiff" class="muted"></span></button>
+      <button data-tab="confirm">待确认匹配 <span id="cConfirm" class="muted"></span></button>
+      <button data-tab="orphan">Bangumi 独有 <span id="cOrphan" class="muted"></span></button>
+      <button data-tab="log">日志</button>
+      <button data-tab="dry">演练结果 <span id="cDry" class="muted"></span></button>
+    </div>
+
+    <div id="tab-diff"></div>
+    <div id="tab-confirm" class="hidden"></div>
+    <div id="tab-orphan" class="hidden"></div>
+    <div id="tab-log" class="hidden"></div>
+    <div id="tab-dry" class="hidden"></div>
+
+    <div class="sticky-actions">
+      <div class="row">
+        <span class="tiny-text muted">批量选择：</span>
+        <button class="tiny" data-bulk="all">全选</button>
+        <button class="tiny" data-bulk="none">取消全选</button>
+        <button class="tiny" data-bulk="pick-toBgm">只选 豆瓣→Bangumi</button>
+        <button class="tiny" data-bulk="pick-toDouban">只选 Bangumi→豆瓣</button>
+        <span id="bulkLine" class="tiny-text muted"></span>
+      </div>
+      <div class="row">
+        <span class="tiny-text muted">「只选…」按<b>匹配完的建议方向</b>挑：选出本来该往那边走的，其余只是取消勾选、方向原样保留。「全选 / 取消全选」只动勾选，一个方向都不改。</span>
+      </div>
+      <div class="row" style="margin-top: 6px">
+        <span class="tiny-text muted">分享到豆瓣广播：</span>
+        <button class="tiny" data-sharebulk="all">全部分享</button>
+        <button class="tiny" data-sharebulk="none">全部不分享</button>
+        <span id="shareLine" class="tiny-text muted"></span>
+      </div>
+      <div class="row" style="margin-top: 6px">
+        <span style="flex: 1"></span>
+        <span id="selLine" class="tiny-text muted"></span>
+        <button id="btnDry">演练</button>
+        <button class="primary" id="btnRun">执行同步</button>
+      </div>
+    </div>
+
+    <script type="module" src="sync.js"></script>
+  </body>
+</html>

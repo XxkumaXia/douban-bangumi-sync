@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "豆瓣 ↔ Bangumi 观影同步",
+  "version": "0.1.0",
+  "description": "双向同步豆瓣与 Bangumi 的想看/在看/看过状态、评分与短评",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "cookies",
+    "declarativeNetRequest",
+    "offscreen",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.douban.com/*",
+    "https://*.doubanio.com/*",
+    "https://api.bgm.tv/*",
+    "https://bgm.tv/*",
+    "https://*.bgm.tv/*",
+    "https://*.bangumi.tv/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "豆瓣 ↔ Bangumi 同步",
+    "default_popup": "src/ui/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/ui/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

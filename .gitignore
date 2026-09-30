@@ -1,0 +1,20 @@
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# 本地工具的工作目录：里面可能有机器的个人记录，绝不进仓库
+.workbuddy/
+
+# 打包产物：发布到 Releases，不进仓库
+*.zip
+*.crx
+dist/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本地临时数据
+*.local

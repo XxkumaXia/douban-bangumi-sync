@@ -1,0 +1,73 @@
+name: 问题反馈
+description: 功能异常、解析失效、同步结果不对
+labels: [bug]
+body:
+  - type: markdown
+    value: |
+      提交前请先做两件事，能省掉一轮来回：
+      1. 设置页 →「接口自检」，把「检查豆瓣读取 / 写入」「检查授权」的结果一起贴上来
+      2. 出问题的条目先跑一次**演练**，把「演练结果」页签里对应那条贴上来
+         （如果一跑就错，直接贴报错）
+
+      注意：**不要贴你的 Bangumi 令牌、豆瓣 cookie（ck）或完整 uid**。
+      贴之前把令牌和 ck 中的字符打码。
+
+  - type: input
+    id: version
+    attributes:
+      label: 扩展版本
+      description: chrome://extensions 里看到的版本号
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器与版本
+      placeholder: Chrome 131 / Edge 131
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象
+      description: 你做了什么、期望发生什么、实际发生了什么
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 出在哪个环节
+      options:
+        - 扫描 / 读取
+        - 条目匹配
+        - 差异计算
+        - 演练
+        - 写入 Bangumi
+        - 写入豆瓣
+        - 界面 / 交互
+        - 其它
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 扫描两侧
+        2. 自动匹配
+        3. 勾选 XX 条目 → 方向 Bangumi→豆瓣
+        4. 执行
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据
+      description: 自检结果、演练结果、报错截图（敏感信息请打码）
+      render: shell

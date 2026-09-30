@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>设置 · 豆瓣 ↔ Bangumi 同步</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      body {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 20px 16px 60px;
+      }
+      header {
+        margin-bottom: 16px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 620px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .checks {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .step {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .step:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>设置</h1>
+      <div class="muted tiny-text">同步前请先填 Bangumi Token，并确认豆瓣已登录、且留着一个豆瓣页面开着</div>
+    </header>
+
+    <div class="card">
+      <h2>Bangumi</h2>
+      <div class="row" style="margin-bottom: 12px">
+        <a class="tiny" href="https://bgm.tv/" target="_blank">打开 Bangumi</a>
+        <a class="tiny" href="https://next.bgm.tv/demo/access-token" target="_blank">令牌管理</a>
+        <a class="tiny" href="https://next.bgm.tv/demo/login" target="_blank">新站登录</a>
+        <a class="tiny" id="bgmHomeLink" target="_blank" title="需要用户名">我的主页</a>
+        <a class="tiny" id="bgmWishLink" target="_blank" title="需要用户名">想看</a>
+        <a class="tiny" id="bgmDoLink" target="_blank" title="需要用户名">在看</a>
+        <a class="tiny" id="bgmCollectLink" target="_blank" title="需要用户名">看过</a>
+        <span class="muted tiny-text">后四个需先填用户名或点「检查授权」，灰色表示暂不可用</span>
+      </div>
+      <div class="field">
+        <label class="label" for="bgmToken">Access Token</label>
+        <input type="password" id="bgmToken" placeholder="粘贴 access_token" />
+        <div class="hint">
+          到
+          <a href="https://next.bgm.tv/demo/access-token/create" target="_blank">next.bgm.tv/demo/access-token/create</a>
+          生成后复制（只完整显示一次）。名称随便填，<b>有效期选最长的那档</b>——个人令牌不带 refresh_token，扩展无法自动续期，过期只能手动重建。<br />
+          <b>域名是 next.bgm.tv，不是 next.bangumi.tv。</b>
+          如提示未登录，先到
+          <a href="https://next.bgm.tv/demo/login" target="_blank">next.bgm.tv/demo/login</a>
+          登录——新站与 bgm.tv 旧站登录态不通用。也可以到下方填 client_id/secret 走 OAuth 自动续期。
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="bgmUsername">Bangumi 用户名</label>
+        <input type="text" id="bgmUsername" placeholder="留空则自动从 token 反查" />
+      </div>
+      <div class="row">
+        <button id="btnBgmCheck">检查授权</button>
+        <span id="bgmStatus" class="tiny-text muted"></span>
+      </div>
+
+      <div class="divider"></div>
+      <details>
+        <summary class="muted tiny-text">OAuth 自动续期（可选）</summary>
+        <div class="field" style="margin-top: 10px">
+          <label class="label" for="bgmClientId">client_id</label>
+          <input type="text" id="bgmClientId" />
+        </div>
+        <div class="field">
+          <label class="label" for="bgmClientSecret">client_secret</label>
+          <input type="password" id="bgmClientSecret" />
+        </div>
+        <div class="field">
+          <label class="label" for="bgmRefresh">refresh_token</label>
+          <input type="password" id="bgmRefresh" />
+        </div>
+        <div class="row">
+          <button id="btnBgmRefresh" class="tiny">立即刷新 token</button>
+          <span id="refreshStatus" class="tiny-text muted"></span>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>豆瓣</h2>
+      <div class="hint" style="margin-bottom: 14px">
+        <b>使用前提：先在浏览器里登录豆瓣，并保持至少一个豆瓣页面打开。</b><br />
+        豆瓣没有公开 API，扩展走的是模拟网页端请求这条路。完全没有豆瓣页面开着时，读取容易失败；
+        写入的「注入标签页」通道也会直接不可用。整个同步过程里别把豆瓣页面都关掉。
+        下方自检的「豆瓣页面」一项会告诉你当前是否满足。
+      </div>
+      <div class="row" style="margin-bottom: 12px">
+        <a class="tiny" href="https://www.douban.com/" target="_blank">打开豆瓣首页</a>
+        <a class="tiny" href="https://movie.douban.com/mine" target="_blank">我的观影</a>
+        <a class="tiny" href="https://movie.douban.com/mine?status=wish" target="_blank">想看</a>
+        <a class="tiny" href="https://movie.douban.com/mine?status=do" target="_blank">在看</a>
+        <a class="tiny" href="https://movie.douban.com/mine?status=collect" target="_blank">看过</a>
+        <span class="muted tiny-text">在新标签页打开，保持它开着就行</span>
+      </div>
+      <div class="field">
+        <label class="label" for="doubanUid">豆瓣 uid</label>
+        <input type="text" id="doubanUid" placeholder="留空则从 /mine 页面自动识别" />
+      </div>
+      <div class="field">
+        <label class="label" for="writeChannel">写入通道</label>
+        <select id="writeChannel">
+          <option value="auto">自动（先后台请求，失败则注入已打开的豆瓣页面）</option>
+          <option value="background">只用后台请求（不需要开豆瓣页面）</option>
+          <option value="tab">只注入标签页（最贴近真实网页操作，需要开着一个豆瓣页面）</option>
+        </select>
+        <div class="hint">
+          豆瓣接口对 Referer 有校验。后台请求已通过规则补上 Referer；若仍被拒，
+          「注入标签页」这条通道由浏览器按真实站点规则生成请求头，成功率最高
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">抓取哪些豆瓣站点</span>
+        <div class="checks">
+          <label><input type="checkbox" id="siteMovie" />影视</label>
+          <label><input type="checkbox" id="siteBook" />读书</label>
+          <label><input type="checkbox" id="siteMusic" />音乐</label>
+        </div>
+        <div class="hint">读书/音乐条目量大，且 Bangumi 对应条目覆盖不全，按需开启</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>接口自检</h2>
+      <div class="row" style="margin-bottom: 10px">
+        <button id="btnProbeRead">检查豆瓣读取</button>
+        <button id="btnProbeWrite">检查豆瓣写入（演练）</button>
+        <button id="btnProbeRules">检查请求头规则</button>
+        <button id="btnProbeShare">检查分享字段</button>
+        <button id="btnProbeForm">读取收藏表单字段</button>
+      </div>
+      <div class="field">
+        <label class="label" for="probeId">写入测试用的豆瓣条目 ID</label>
+        <input type="text" id="probeId" placeholder="例如 1292052" />
+        <div class="hint">
+          演练模式只构造请求不发送（含「分享字段」这一项：它只做一次 GET 读取豆瓣的收藏弹窗用于解析字段名）。
+          若要真正发一次写请求，请到同步面板用单条同步试水
+        </div>
+      </div>
+      <div id="probeOut"></div>
+    </div>
+
+    <div class="card">
+      <h2>匹配与限速</h2>
+      <div class="grid2">
+        <div class="field">
+          <label class="label" for="autoTh">自动接受阈值</label>
+          <input type="number" id="autoTh" min="0" max="1" step="0.01" />
+          <div class="hint">置信度高于此值直接采纳</div>
+        </div>
+        <div class="field">
+          <label class="label" for="candTh">候选阈值</label>
+          <input type="number" id="candTh" min="0" max="1" step="0.01" />
+          <div class="hint">低于此值直接跳过，不进待确认列表</div>
+        </div>
+        <div class="field">
+          <label class="label" for="writeDelay">写入间隔（毫秒）</label>
+          <input type="number" id="writeDelay" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label class="label" for="readDelay">翻页间隔（毫秒）</label>
+          <input type="number" id="readDelay" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label class="label" for="maxItems">每个列表最多抓取</label>
+          <input type="number" id="maxItems" min="0" step="10" />
+          <div class="hint">0 表示不限。先设小值跑通流程，再放开</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>同步内容</h2>
+      <div class="field">
+        <span class="label">同步哪些字段</span>
+        <div class="checks">
+          <label><input type="checkbox" id="fStatus" />状态（想看/在看/看过）</label>
+          <label><input type="checkbox" id="fRating" />评分</label>
+          <label><input type="checkbox" id="fComment" />评价/短评</label>
+          <label><input type="checkbox" id="fTags" />标签</label>
+        </div>
+        <div class="hint">「评价」默认关闭：短评属于个人表达，误写不可逆，确认无误后再开启</div>
+      </div>
+      <div class="field">
+        <span class="label">同步哪些分类</span>
+        <div class="checks">
+          <label><input type="checkbox" id="cAnime" />动画</label>
+          <label><input type="checkbox" id="cReal" />三次元</label>
+          <label><input type="checkbox" id="cBook" />图书</label>
+          <label><input type="checkbox" id="cMusic" />音乐</label>
+          <label><input type="checkbox" id="cGame" />游戏</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="conflict">冲突处理</label>
+        <select id="conflict">
+          <option value="newer">以更新时间较新的一侧为准</option>
+          <option value="manual">全部手动指定方向</option>
+          <option value="douban">一律以豆瓣为准（写入 Bangumi）</option>
+          <option value="bangumi">一律以 Bangumi 为准（写入豆瓣）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="ratingMode">评分换算</label>
+        <select id="ratingMode">
+          <option value="step">阶梯（1★=2分，每档 +2）</option>
+          <option value="linear">线性（星级 ×2）</option>
+          <option value="custom">自定义（自己定每档分数）</option>
+        </select>
+        <div class="hint" id="ratingHint"></div>
+      </div>
+      <div class="field" id="customMapField" hidden>
+        <label class="label">自定义换算表</label>
+        <div class="row" id="customMapRow"></div>
+        <div class="hint">
+          填 1★~5★ 各自对应的 Bangumi 分（1-10 整数，建议递增）。
+          <b>反向（Bangumi 分 → 豆瓣星）由这张表自动推导</b>：分数不超过某一档就归到那一星。
+          <button class="tiny" id="btnCustomReset">恢复默认</button>
+          <button class="tiny" id="btnCustomFromStep">用阶梯值</button>
+        </div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="allowClear" />允许清空</label>
+        <div class="hint">开启后，一侧没有评分/短评时会清掉另一侧已有的内容。默认关闭以避免误删</div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="ratingOnlyWhenDone" />写「在看 / 想看」时不带评分</label>
+        <div class="hint">
+          <b>默认关闭。</b>豆瓣的「在看」本身是可以打分的，所以默认状态与评分照原样一起写。
+          如果你实测发现带上评分后豆瓣把状态改成了「看过」，再打开这一项：开启后目标状态不是
+          「看过」时这次只写状态、不带评分。<br />
+          不管开不开，每次写入后都会<b>回读豆瓣上的实际状态</b>，对不上会在同步结果里标红 ——
+          想知道豆瓣到底认不认「在看 + 评分」，看那个校验结果比看这里准
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>一键同步</h2>
+      <div class="hint" style="margin-bottom: 12px">
+        不用进同步面板也能跑完整流程：点「准备」扫描两侧并自动匹配（含 Bangumi 独有条目反查豆瓣），
+        把「要写多少条、往哪边写」列出来给你看；确认无误再点「确认写入」。
+        <b>准备阶段只读不写</b>，可以随时停在这里。
+      </div>
+      <div class="row">
+        <button class="primary" id="btnQuickPrepare">准备（扫描并匹配）</button>
+        <button id="btnQuickRun" disabled>确认写入</button>
+        <button class="tiny" id="btnQuickPanel">打开同步面板逐条核对</button>
+      </div>
+      <div class="hint">同步面板可以对每一条单独指定方向、逐条决定要不要发豆瓣广播，需要精细控制时用那个</div>
+      <div id="quickOut" style="margin-top: 10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>数据管理</h2>
+      <div class="row">
+        <button id="btnClearMap">清空映射表</button>
+        <button id="btnClearSnap">清空扫描结果</button>
+        <button id="btnClearLog">清空日志</button>
+        <button class="danger" id="btnReset">恢复默认设置</button>
+      </div>
+      <div class="hint">映射表是逐条确认的对应关系，清空后需要重新匹配</div>
+    </div>
+
+    <div class="row" style="margin: 16px 0">
+      <button class="primary" id="btnSave">保存设置</button>
+      <button id="btnOpenPanel">打开同步面板</button>
+      <span id="saveMsg" class="tiny-text muted"></span>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

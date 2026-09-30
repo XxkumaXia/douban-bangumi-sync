@@ -1,0 +1,316 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1f2328;
+  --muted: #656d76;
+  --border: #d8dee4;
+  --border-soft: #eaeef2;
+  --accent: #2f6feb;
+  --accent-soft: #e8f0fe;
+  --douban: #41ac52;
+  --douban-soft: #e8f6ea;
+  --bangumi: #e0728a;
+  --bangumi-soft: #fdeef1;
+  --warn: #b25e02;
+  --warn-soft: #fff4e6;
+  --danger: #cf222e;
+  --danger-soft: #ffebe9;
+  --ok: #1a7f37;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(31, 35, 40, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 5px 12px;
+  transition: background 0.12s, border-color 0.12s;
+}
+button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button.primary:hover:not(:disabled) {
+  background: #2a5fd6;
+}
+button.danger {
+  color: var(--danger);
+  border-color: #ffc9c4;
+  background: var(--danger-soft);
+}
+button.tiny {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+input[type='text'],
+input[type='password'],
+input[type='number'],
+select,
+textarea {
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  width: 100%;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row.between {
+  justify-content: space-between;
+}
+
+/* 自定义换算表的 1★~5★ 输入格 */
+.cm-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cm-cell input {
+  width: 56px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tiny-text {
+  font-size: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: #f6f8fa;
+  color: var(--muted);
+}
+.tag.douban {
+  background: var(--douban-soft);
+  border-color: #bfe3c5;
+  color: #1f7a31;
+}
+.tag.bangumi {
+  background: var(--bangumi-soft);
+  border-color: #f7ccd5;
+  color: #b44a63;
+}
+.tag.warn {
+  background: var(--warn-soft);
+  border-color: #f5d7a8;
+  color: var(--warn);
+}
+.tag.ok {
+  background: #e8f6ea;
+  border-color: #bfe3c5;
+  color: var(--ok);
+}
+.tag.danger {
+  background: var(--danger-soft);
+  border-color: #ffc9c4;
+  color: var(--danger);
+}
+
+.field {
+  margin-bottom: 14px;
+}
+.field > .label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+.field .hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+}
+
+pre.log {
+  background: #0d1117;
+  color: #d0d7de;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.empty {
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 14px 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---- 页面内确认框 / 提示条（替代被嵌入环境拦掉的原生 confirm/alert）---- */
+
+.dlg-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 35, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 2147483000;
+}
+
+.dlg-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(31, 35, 40, 0.24);
+  padding: 16px;
+  width: min(360px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.dlg-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dlg-msg {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 14px;
+}
+
+.dlg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dlg-ok.dlg-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.dlg-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100% - 24px));
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(31, 35, 40, 0.2);
+  z-index: 2147483001;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.dlg-toast-ok {
+  background: #e8f6ea;
+  border: 1px solid #bfe3c5;
+  color: var(--ok);
+}
+.dlg-toast-bad {
+  background: var(--danger-soft);
+  border: 1px solid #ffc9c4;
+  color: var(--danger);
+}
