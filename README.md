@@ -104,7 +104,7 @@ git clone https://github.com/XxkumaXia/douban-bangumi-sync.git
 
 ```bash
 npm i -D jsdom       # 只有解析测试需要
-npm test             # 全量回归（498 项）
+npm test             # 全量回归（514 项）
 npm run test:write   # 只跑豆瓣写入相关
 ```
 

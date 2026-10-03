@@ -27,6 +27,9 @@ const state = {
   query: '',
   // 分类筛选：all / wish / doing / done。同样只影响显示，不动勾选
   statusFilter: 'all',
+  // 方向筛选：all / toBgm / toDouban。点底部「只选…」时一并设置 ——
+  // 让差异列表只留下那个方向的条目，省得批量选完还要一条条找哪些被选中了
+  dirFilter: 'all',
   // 待确认条目反查 Bangumi 的结果：{ [pairKey]: { status, candidates, reason } }
   forwardReport: {},
 };
@@ -116,26 +119,59 @@ function matchStatus(p) {
   return p.douban?.status === f || p.bangumi?.status === f;
 }
 
-/** 当前筛选条件（搜索词 + 分类）下可见的条目（批量操作的作用范围） */
-function visiblePairs() {
+/**
+ * 一条 pair 是否命中当前的「方向筛选」（只选 豆瓣→Bangumi / Bangumi→豆瓣）。
+ * 按**建议方向**判定，和「只选…」按钮的口径必须同源 ——
+ * 否则会出现「按钮写着 32 条，列表只显示 30 条」这种对不上的情况。
+ */
+function matchDir(p) {
+  if (state.dirFilter === 'all') return true;
+  return p.diffs.some((d) => suggestionOf(d) === state.dirFilter);
+}
+
+/**
+ * 批量操作（全选 / 只选… / 全部分享）的作用范围：只按搜索词 + 分类收窄。
+ *
+ * **刻意不含方向筛选**：「只选 豆瓣→Bangumi」要覆盖全集才能把另一个方向的勾取消掉。
+ * 若这个范围本身已被方向筛过，切换方向时会出现「新方向一条都没勾上、旧方向的勾还留着」。
+ */
+function scopedPairs() {
   return state.pairs.filter((p) => matchQuery(p) && matchStatus(p));
 }
 
-/** 在已有筛选条件上再叠加搜索词与分类 */
+/** 列表里实际显示的条目：在批量范围之上再叠加「方向筛选」 */
+function visiblePairs() {
+  return scopedPairs().filter(matchDir);
+}
+
+/** 在已有筛选条件上再叠加搜索词与分类（各页签列表用，不含方向筛选） */
 function withFilters(list) {
   return list.filter((p) => matchQuery(p) && matchStatus(p));
 }
 
-/** 正在筛选吗（用于决定空列表时该说什么、批量按钮要不要标注范围） */
-function isFiltering() {
+/** 方向筛选的中文名（提示文案用） */
+const DIR_FILTER_LABEL = { toBgm: '豆瓣→Bangumi', toDouban: 'Bangumi→豆瓣' };
+
+/** 只按搜索词 + 分类判断（待确认匹配 / Bangumi 独有 用，它们不套方向筛选） */
+function isFilteringNoDir() {
   return !!state.query.trim() || state.statusFilter !== 'all';
 }
 
-/** 筛掉的原因，说人话：「搜索词」/「分类：在看」/ 两者都有 */
-function filterDesc() {
+/** 正在筛选吗（用于决定空列表时该说什么、批量按钮要不要标注范围） */
+function isFiltering() {
+  return isFilteringNoDir() || state.dirFilter !== 'all';
+}
+
+/**
+ * 筛掉的原因，说人话：「搜索词」/「分类：在看」/「方向…」。
+ * withDir=false 时不提方向 —— 待确认匹配 / Bangumi 独有 两个页签不套方向筛选，
+ * 那里的空态不该声称「被方向筛掉了」。
+ */
+function filterDesc(withDir = true) {
   const parts = [];
   if (state.query.trim()) parts.push(`搜索词「${state.query.trim()}」`);
   if (state.statusFilter !== 'all') parts.push(`分类「${STATUS_LABEL[state.statusFilter] || state.statusFilter}」`);
+  if (withDir && state.dirFilter !== 'all') parts.push(`方向「${DIR_FILTER_LABEL[state.dirFilter]}」`);
   return parts.join(' + ');
 }
 
@@ -179,14 +215,19 @@ function pairsOfTab(tab) {
 }
 
 function renderQueryLine() {
-  const vis = visiblePairs().length;
+  const vis = visiblePairs().length;  // 列表里真正显示的条数
+  const scope = scopedPairs().length; // 批量按钮的作用范围（不含方向筛选）
   const line = $('qLine');
   if (line) {
     line.textContent = isFiltering() ? `筛出 ${vis} / ${state.pairs.length} 条（${filterDesc()}）` : '';
   }
   const bulk = $('bulkLine');
   if (bulk) {
-    bulk.textContent = isFiltering() ? `（批量只作用于筛出的 ${vis} 条）` : '';
+    bulk.textContent = isFiltering()
+      ? `（批量只作用于筛出的 ${scope} 条${
+          state.dirFilter !== 'all' ? `；列表仅显示「${DIR_FILTER_LABEL[state.dirFilter]}」` : ''
+        }）`
+      : '';
   }
 }
 
@@ -213,14 +254,17 @@ function countConfirm() {
 
 function renderDiff() {
   const host = $('tab-diff');
-  const list = withFilters(state.pairs.filter((p) => p.diffs.length));
+  const diffAll = pairsOfTab('diff');
+  // 列表 = 搜索词 + 分类 + 方向，三层筛选叠加
+  const list = withFilters(diffAll).filter(matchDir);
   if (!list.length) {
     host.innerHTML = isFiltering()
-      ? `<div class="empty">没有符合${escapeHtml(filterDesc())}的差异条目（共 ${state.pairs.filter((p) => p.diffs.length).length} 条差异被筛掉）</div>`
+      ? `<div class="empty">没有符合${escapeHtml(filterDesc())}的差异条目（共 ${diffAll.length} 条差异被筛掉）</div>`
       : `<div class="empty">没有需要同步的差异。先点「扫描两侧」，再点「自动匹配」。</div>`;
     updateSelLine();
     updateShareLine();
     renderBulkCounts();
+    renderQueryLine(); // 方向筛选一变，顶部的「筛出 X / Y」与批量范围提示也要跟着更新
     return;
   }
 
@@ -256,6 +300,7 @@ function renderDiff() {
   updateSelLine();
   updateShareLine();
   renderBulkCounts();
+  renderQueryLine(); // 方向筛选一变，顶部的「筛出 X / Y」与批量范围提示也要跟着更新
 }
 
 /**
@@ -264,7 +309,8 @@ function renderDiff() {
  * 一条里同时有两边建议的字段时，两个按钮都会把它算进去 —— 那是事实，不是 bug。
  */
 function renderBulkCounts() {
-  const list = withFilters(state.pairs.filter((p) => p.diffs.length));
+  // 数字按 scopedPairs()（不含方向筛选）统计，否则收窄列表后另一个方向的数字会塌成 0
+  const list = scopedPairs().filter((p) => p.diffs.length);
   let toBgm = 0;
   let toDouban = 0;
   for (const p of list) {
@@ -277,6 +323,15 @@ function renderBulkCounts() {
   };
   set('pick-toBgm', `只选 豆瓣→Bangumi（${toBgm}）`);
   set('pick-toDouban', `只选 Bangumi→豆瓣（${toDouban}）`);
+  // 正在按某方向收窄列表时，那个按钮保持按下态 —— 否则用户看不出「列表怎么少了一半」
+  document.querySelectorAll('[data-bulk]').forEach((b) => {
+    const v = b.dataset.bulk;
+    b.classList.toggle(
+      'active',
+      (v === 'pick-toBgm' && state.dirFilter === 'toBgm') ||
+        (v === 'pick-toDouban' && state.dirFilter === 'toDouban')
+    );
+  });
 }
 
 function renderPair(p) {
@@ -553,8 +608,8 @@ function renderConfirm() {
   const list = withFilters(state.pairs.filter((p) => !p.subjectId && p.douban));
   const total = state.pairs.filter((p) => !p.subjectId && p.douban).length;
   if (!list.length) {
-    host.innerHTML = isFiltering()
-      ? `<div class="empty">没有符合${escapeHtml(filterDesc())}的待确认条目（共 ${total} 条被筛掉）</div>`
+    host.innerHTML = isFilteringNoDir()
+      ? `<div class="empty">没有符合${escapeHtml(filterDesc(false))}的待确认条目（共 ${total} 条被筛掉）</div>`
       : `<div class="empty">没有待确认的条目</div>`;
     return;
   }
@@ -722,8 +777,8 @@ function renderOrphan() {
   const all = state.pairs.filter((p) => p.flags.includes('missing-in-douban'));
   const list = withFilters(all);
   if (!list.length) {
-    host.innerHTML = isFiltering()
-      ? `<div class="empty">没有符合${escapeHtml(filterDesc())}的 Bangumi 独有条目（共 ${all.length} 条被筛掉）</div>`
+    host.innerHTML = isFilteringNoDir()
+      ? `<div class="empty">没有符合${escapeHtml(filterDesc(false))}的 Bangumi 独有条目（共 ${all.length} 条被筛掉）</div>`
       : `<div class="empty">Bangumi 上的收藏都已和豆瓣条目建立对应</div>`;
     return;
   }
@@ -1025,7 +1080,7 @@ $('btnOpenOptions').addEventListener('click', () => {
 document.querySelectorAll('[data-sharebulk]').forEach((btn) =>
   btn.addEventListener('click', () => {
     const on = btn.dataset.sharebulk === 'all';
-    for (const p of visiblePairs()) {
+    for (const p of scopedPairs()) {
       const writesDouban = p.diffs.some((d) => d.selected && d.direction === 'toDouban');
       if (on) {
         if (writesDouban) state.shareSet.add(p.key);
@@ -1052,12 +1107,22 @@ document.querySelectorAll('[data-sharebulk]').forEach((btn) =>
 document.querySelectorAll('[data-bulk]').forEach((btn) =>
   btn.addEventListener('click', () => {
     const v = btn.dataset.bulk;
-    // 只作用于搜索筛出来的条目：正在筛选时，用户要的是「对这几条做」而不是动全部
-    for (const p of visiblePairs()) {
+    // 勾选在**不含方向筛选**的范围上执行（搜索词 + 分类收窄，方向不参与）：
+    // 「只选 X」必须覆盖全集，才能把另一个方向的勾一起取消掉。
+    for (const p of scopedPairs()) {
       if (v === 'all') setPairSelected(p, true);
       else if (v === 'none') setPairSelected(p, false);
       else if (v === 'pick-toBgm') selectBySuggestion(p, 'toBgm');
       else if (v === 'pick-toDouban') selectBySuggestion(p, 'toDouban');
+    }
+    // 再动「方向筛选」，让中间列表只留下对应的那些：
+    //   只选 X          → 收窄到 X；再点同一个 → 放开（勾选保持，只放开显示）
+    //   全选 / 取消全选  → 一并放开，否则会出现「明明全选了、列表还缺一半」
+    if (v === 'pick-toBgm' || v === 'pick-toDouban') {
+      const dir = v === 'pick-toBgm' ? 'toBgm' : 'toDouban';
+      state.dirFilter = state.dirFilter === dir ? 'all' : dir;
+    } else {
+      state.dirFilter = 'all';
     }
     renderDiff();
   })
@@ -1153,6 +1218,10 @@ const TAB_KEYS = ['diff', 'confirm', 'orphan', 'log', 'dry'];
 async function switchTab(t) {
   document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === t));
   TAB_KEYS.forEach((k) => $(`tab-${k}`).classList.toggle('hidden', k !== t));
+  // 方向筛选只对差异页签有意义，切走就放开 —— 否则别的页签会莫名少一大截条目。
+  // 状态放开了，差异列表也要重画一遍，不然切回来会看到「按钮没高亮、列表却还缺一大块」。
+  state.dirFilter = 'all';
+  renderDiff(); // 内部会一并刷新批量按钮的高亮与计数
   renderFilterCounts(); // 各分类的条数随页签变，切页签要重算
   if (t === 'log') await renderLog();
 }

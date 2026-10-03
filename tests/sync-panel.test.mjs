@@ -356,5 +356,41 @@ truthy('空列表说明是两个条件叠加筛掉的', /分类「看过」/.tes
 $('btnClearQ').dispatchEvent(new window.Event('click'));
 eq('清除搜索会一并解除分类筛选', diffKeys().sort(), allDiff.slice().sort());
 
+console.log('=== 8. 方向筛选：点「只选某方向」时中间的列表也跟着收窄 ===');
+// 需求原话：「批量选择之后还得一个一个找哪些是选中的」。
+// 数据：douban:1 建议 toBgm、douban:2 建议 toDouban，各一条。
+clickBulk('pick-toBgm');
+eq('只选 豆瓣→Bangumi：列表只剩这个方向', diffKeys(), ['douban:1']);
+truthy('该按钮进入按下态', document.querySelector('[data-bulk="pick-toBgm"]').classList.contains('active'));
+eq('另一个方向按钮没被误高亮', document.querySelector('[data-bulk="pick-toDouban"]').classList.contains('active'), false);
+truthy('顶部说明当前被方向收窄', /方向「豆瓣→Bangumi」/.test($('qLine').textContent));
+truthy('批量提示交代了列表只显示哪个方向', /列表仅显示「豆瓣→Bangumi」/.test($('bulkLine').textContent));
+
+// 切到另一个方向：列表换过去，且「另一个方向的勾」要被清掉（这正是范围不能含方向筛选的原因）
+const bgmBtnText = document.querySelector('[data-bulk="pick-toBgm"]').textContent;
+clickBulk('pick-toDouban');
+eq('切到 Bangumi→豆瓣：列表换成该方向', diffKeys(), ['douban:2']);
+eq('切方向后另一方向的条数不变（计数没被筛选污染）', document.querySelector('[data-bulk="pick-toBgm"]').textContent, bgmBtnText);
+eq('切方向后另一个方向不再有勾选', selNums().toBgm, 0);
+truthy('切方向后新方向有勾选', selNums().toDouban > 0);
+
+// 再点同一个按钮 = 放开收窄，回到全部（勾选保持）
+clickBulk('pick-toDouban');
+eq('再点同一个：列表回到全部', diffKeys().sort(), allDiff.slice().sort());
+eq('放开后按钮不再按下', document.querySelector('[data-bulk="pick-toDouban"]').classList.contains('active'), false);
+
+// 「全选」要一并放开收窄，否则会出现「明明全选了、列表还缺一半」
+clickBulk('pick-toBgm');
+eq('收窄状态下列表确实变少了', diffKeys(), ['douban:1']);
+clickBulk('all');
+eq('点「全选」会把方向收窄一并放开', diffKeys().sort(), allDiff.slice().sort());
+
+// 方向筛选只影响差异页签：切走要自动放开，切回来不能还缺一块
+clickBulk('pick-toBgm');
+eq('（切页签前）列表已收窄', diffKeys(), ['douban:1']);
+document.querySelector('.tabs button[data-tab="confirm"]').dispatchEvent(new window.Event('click'));
+eq('切到别的页签后方向筛选放开、列表恢复', diffKeys().sort(), allDiff.slice().sort());
+eq('按钮也不再按下', document.querySelector('[data-bulk="pick-toBgm"]').classList.contains('active'), false);
+
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`);
 if (fail) process.exit(1);
