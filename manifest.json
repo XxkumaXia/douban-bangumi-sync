@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "豆瓣 ↔ Bangumi 观影同步",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "双向同步豆瓣与 Bangumi 的想看/在看/看过状态、评分与短评",
   "minimum_chrome_version": "116",
   "permissions": [
